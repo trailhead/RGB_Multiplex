@@ -51,7 +51,9 @@ class RGBMultiplex {
   float r_resistor_, g_resistor_, b_resistor_;
   float r_vf_, g_vf_, b_vf_;
   float supply_voltage_;
+
 #if defined(ARDUINO_ARCH_RP2040)
   alarm_id_t auto_update_alarm_id_;
 #endif
+
 };
