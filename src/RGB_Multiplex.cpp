@@ -53,9 +53,9 @@ void RGBMultiplex::Update() {
   for (uint8_t i = 0; i < num_leds_; ++i) {
     digitalWrite(anode_pins_[i], LOW);
   }
-  digitalWrite(r_pin_, values_[current_led_].r ? HIGH : LOW);
-  digitalWrite(g_pin_, values_[current_led_].g ? HIGH : LOW);
-  digitalWrite(b_pin_, values_[current_led_].b ? HIGH : LOW);
+  digitalWrite(r_pin_, values_[current_led_].r ? LOW : HIGH);
+  digitalWrite(g_pin_, values_[current_led_].g ? LOW : HIGH);
+  digitalWrite(b_pin_, values_[current_led_].b ? LOW : HIGH);
   digitalWrite(anode_pins_[current_led_], HIGH);
   current_led_ = (current_led_ + 1) % num_leds_;
 }
