@@ -1,11 +1,9 @@
-#pragma once
-
-#include <Arduino.h>
-
 #if defined(ARDUINO_ARCH_RP2040)
 #include <hardware/irq.h>
 #include <hardware/timer.h>
 #endif
+#pragma once
+#include <Arduino.h>
 
 class RGBMultiplex {
  public:
@@ -27,12 +25,11 @@ class RGBMultiplex {
   void Off(uint8_t led_index);
   void AllOff();
   void Update();
-
+  // For RP2040: start/stop timer interrupt for multiplexing
 #if defined(ARDUINO_ARCH_RP2040)
   void StartAutoUpdate();
   void StopAutoUpdate();
 #endif
-
   void SetResistorValues(float r_ohms, float g_ohms, float b_ohms);
   void SetForwardVoltages(float r_vf, float g_vf, float b_vf);
   void SetSupplyVoltage(float vcc);
@@ -51,6 +48,4 @@ class RGBMultiplex {
   float r_resistor_, g_resistor_, b_resistor_;
   float r_vf_, g_vf_, b_vf_;
   float supply_voltage_;
-#if defined(ARDUINO_ARCH_RP2040)
-  alarm_id_t auto_update_alarm_id_;
 };
