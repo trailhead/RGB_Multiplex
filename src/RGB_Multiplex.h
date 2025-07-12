@@ -1,5 +1,11 @@
 #pragma once
+
 #include <Arduino.h>
+
+#if defined(ARDUINO_ARCH_RP2040)
+#include <hardware/irq.h>
+#include <hardware/timer.h>
+#endif
 
 class RGBMultiplex {
  public:
@@ -21,6 +27,12 @@ class RGBMultiplex {
   void Off(uint8_t led_index);
   void AllOff();
   void Update();
+
+#if defined(ARDUINO_ARCH_RP2040)
+  void StartAutoUpdate();
+  void StopAutoUpdate();
+#endif
+
   void SetResistorValues(float r_ohms, float g_ohms, float b_ohms);
   void SetForwardVoltages(float r_vf, float g_vf, float b_vf);
   void SetSupplyVoltage(float vcc);

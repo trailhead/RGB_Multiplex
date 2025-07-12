@@ -1,5 +1,30 @@
 #include "RGB_Multiplex.h"
 
+#if defined(ARDUINO_ARCH_RP2040)
+#include <hardware/irq.h>
+#include <hardware/timer.h>
+static RGBMultiplex* g_rgb_multiplex_instance = nullptr;
+
+// Timer callback for 1ms update
+int64_t rgb_multiplex_timer_callback(alarm_id_t, void*) {
+  if (g_rgb_multiplex_instance) {
+    g_rgb_multiplex_instance->Update();
+  }
+  // Re-arm for next millisecond
+  return 1000;
+}
+
+// For RP2040: start/stop timer interrupt for multiplexing
+#if defined(ARDUINO_ARCH_RP2040)
+void RGBMultiplex::StartAutoUpdate() {
+  add_alarm_in_us(1000, rgb_multiplex_timer_callback, nullptr, true);
+}
+
+void RGBMultiplex::StopAutoUpdate() {
+  cancel_alarm(rgb_multiplex_timer_callback);
+}
+#endif
+
 RGBMultiplex::RGBMultiplex(const uint8_t* anode_pins, uint8_t num_leds, uint8_t r_pin, uint8_t g_pin, uint8_t b_pin)
     : anode_pins_(anode_pins), num_leds_(num_leds), r_pin_(r_pin), g_pin_(g_pin), b_pin_(b_pin),
       current_led_(0), r_resistor_(0), g_resistor_(0), b_resistor_(0),
@@ -19,6 +44,11 @@ void RGBMultiplex::Begin() {
   pinMode(g_pin_, OUTPUT);
   pinMode(b_pin_, OUTPUT);
   AllOff();
+
+  #if defined(ARDUINO_ARCH_RP2040)
+    g_rgb_multiplex_instance = this;
+    StartAutoUpdate();
+  #endif
 }
 
 void RGBMultiplex::SetColor(uint8_t led_index, bool r, bool g, bool b) {

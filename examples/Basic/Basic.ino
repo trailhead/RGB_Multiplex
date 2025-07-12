@@ -32,6 +32,9 @@ void setup() {
   rgb.SetForwardVoltages(2.2, 3.2, 3.2);
   rgb.SetSupplyVoltage(3.3);
   ApplyColors();
+#if defined(ARDUINO_ARCH_RP2040)
+  rgb.StartAutoUpdate();
+#endif
 }
 
 void PrintBarGraph(float percent) {
