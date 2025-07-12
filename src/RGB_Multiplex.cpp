@@ -15,7 +15,6 @@ int64_t rgb_multiplex_timer_callback(alarm_id_t, void*) {
 }
 
 // For RP2040: start/stop timer interrupt for multiplexing
-#if defined(ARDUINO_ARCH_RP2040)
 void RGBMultiplex::StartAutoUpdate() {
   add_alarm_in_us(1000, rgb_multiplex_timer_callback, nullptr, true);
 }
