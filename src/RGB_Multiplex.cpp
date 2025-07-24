@@ -10,13 +10,13 @@ int64_t rgb_multiplex_timer_callback(alarm_id_t, void*) {
   if (g_rgb_multiplex_instance) {
     g_rgb_multiplex_instance->Update();
   }
-  // Re-arm for next millisecond
-  return 1000;
+  // Re-arm for next .2 millisecond
+  return 200;
 }
 
 // For RP2040: start/stop timer interrupt for multiplexing
 void RGBMultiplex::StartAutoUpdate() {
-  auto_update_alarm_id_ = add_alarm_in_us(1000, rgb_multiplex_timer_callback, nullptr, true);
+  auto_update_alarm_id_ = add_alarm_in_us(200, rgb_multiplex_timer_callback, nullptr, true);
 }
 
 void RGBMultiplex::StopAutoUpdate() {
@@ -52,9 +52,22 @@ void RGBMultiplex::Begin() {
 
 void RGBMultiplex::SetColor(uint8_t led_index, bool r, bool g, bool b) {
   if (led_index >= num_leds_) return;
+
+#if defined(ARDUINO_ARCH_RP2040)
+  static critical_section_t rgbmux_critsec;
+  static bool critsec_init = false;
+  if (!critsec_init) { critical_section_init(&rgbmux_critsec); critsec_init = true; }
+  critical_section_enter_blocking(&rgbmux_critsec);
+#endif
+
   values_[led_index].r = r;
   values_[led_index].g = g;
   values_[led_index].b = b;
+
+#if defined(ARDUINO_ARCH_RP2040)
+  critical_section_exit(&rgbmux_critsec);
+#endif
+
 }
 
 void RGBMultiplex::SetColor(uint8_t led_index, Color3Bits color) {
@@ -79,14 +92,49 @@ void RGBMultiplex::AllOff() {
 }
 
 void RGBMultiplex::Update() {
+
+  #if defined(ARDUINO_ARCH_RP2040)
+    static critical_section_t rgbmux_critsec;
+    static bool critsec_init = false;
+    if (!critsec_init) { critical_section_init(&rgbmux_critsec); critsec_init = true; }
+    critical_section_enter_blocking(&rgbmux_critsec);
+  #endif
+  
   for (uint8_t i = 0; i < num_leds_; ++i) {
     digitalWrite(anode_pins_[i], LOW);
   }
-  digitalWrite(r_pin_, values_[current_led_].r ? LOW : HIGH);
-  digitalWrite(g_pin_, values_[current_led_].g ? LOW : HIGH);
-  digitalWrite(b_pin_, values_[current_led_].b ? LOW : HIGH);
-  digitalWrite(anode_pins_[current_led_], HIGH);
+  // Global brightness: 0=off, 7=on every cycle, distribute ON cycles evenly
+  bool on = false;
+  if (global_brightness_ > 0) {
+    on = (pwm_cycle_ < global_brightness_);
+  }
+  if (on) {
+    digitalWrite(r_pin_, values_[current_led_].r ? LOW : HIGH);
+    digitalWrite(g_pin_, values_[current_led_].g ? LOW : HIGH);
+    digitalWrite(b_pin_, values_[current_led_].b ? LOW : HIGH);
+    digitalWrite(anode_pins_[current_led_], HIGH);
+  } else {
+    digitalWrite(r_pin_, HIGH);
+    digitalWrite(g_pin_, HIGH);
+    digitalWrite(b_pin_, HIGH);
+    digitalWrite(anode_pins_[current_led_], LOW);
+  }
   current_led_ = (current_led_ + 1) % num_leds_;
+  pwm_cycle_ = (pwm_cycle_ + 1) % 8;
+
+  #if defined(ARDUINO_ARCH_RP2040)
+    critical_section_exit(&rgbmux_critsec);
+  #endif
+
+}
+
+void RGBMultiplex::SetGlobalBrightness(uint8_t brightness) {
+  if (brightness > 8) brightness = 8;
+  global_brightness_ = brightness;
+}
+
+uint8_t RGBMultiplex::GetGlobalBrightness() const {
+  return global_brightness_;
 }
 
 void RGBMultiplex::SetResistorValues(float r_ohms, float g_ohms, float b_ohms) {

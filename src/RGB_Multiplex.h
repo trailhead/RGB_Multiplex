@@ -28,6 +28,10 @@ class RGBMultiplex {
   void AllOff();
   void Update();
 
+  // Global brightness: 1-8 (default 8 = max)
+  void SetGlobalBrightness(uint8_t brightness);
+  uint8_t GetGlobalBrightness() const;
+
   void SetResistorValues(float r_ohms, float g_ohms, float b_ohms);
   void SetForwardVoltages(float r_vf, float g_vf, float b_vf);
   void SetSupplyVoltage(float vcc);
@@ -44,6 +48,8 @@ class RGBMultiplex {
   struct RGB {
     bool r, g, b;
   };
+  uint8_t global_brightness_ = 8; // 1-8, default max
+  uint8_t pwm_cycle_ = 0;
   const uint8_t* anode_pins_;
   uint8_t num_leds_;
   uint8_t r_pin_, g_pin_, b_pin_;
