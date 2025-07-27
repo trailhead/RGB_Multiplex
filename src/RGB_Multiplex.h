@@ -7,19 +7,21 @@
 #include <hardware/timer.h>
 #endif
 
+// 3-bit color enum: bit 2 = blue, bit 1 = green, bit 0 = red
+enum class Color3Bits : uint8_t {
+  kOff     = 0b000,
+  kRed     = 0b001,
+  kGreen   = 0b010,
+  kYellow  = 0b011,
+  kBlue    = 0b100,
+  kMagenta = 0b101,
+  kCyan    = 0b110,
+  kWhite   = 0b111
+};
+
 class RGBMultiplex {
  public:
-  // 3-bit color enum: bit 2 = blue, bit 1 = green, bit 0 = red
-  enum class Color3Bits : uint8_t {
-    kOff     = 0b000,
-    kRed     = 0b001,
-    kGreen   = 0b010,
-    kYellow  = 0b011,
-    kBlue    = 0b100,
-    kMagenta = 0b101,
-    kCyan    = 0b110,
-    kWhite   = 0b111
-  };
+  
   RGBMultiplex(const uint8_t* anode_pins, uint8_t num_leds, uint8_t r_pin, uint8_t g_pin, uint8_t b_pin);
   void Begin();
   void SetColor(uint8_t led_index, bool r, bool g, bool b);
