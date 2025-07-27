@@ -10,13 +10,13 @@ int64_t rgb_multiplex_timer_callback(alarm_id_t, void*) {
   if (g_rgb_multiplex_instance) {
     g_rgb_multiplex_instance->Update();
   }
-  // Re-arm for next .2 millisecond
-  return 200;
+  // Re-arm for next .1 millisecond
+  return 100;
 }
 
 // For RP2040: start/stop timer interrupt for multiplexing
 void RGBMultiplex::StartAutoUpdate() {
-  auto_update_alarm_id_ = add_alarm_in_us(200, rgb_multiplex_timer_callback, nullptr, true);
+  auto_update_alarm_id_ = add_alarm_in_us(100, rgb_multiplex_timer_callback, nullptr, true);
 }
 
 void RGBMultiplex::StopAutoUpdate() {
@@ -36,7 +36,7 @@ RGBMultiplex::RGBMultiplex(const uint8_t* anode_pins, uint8_t num_leds, uint8_t 
 
 void RGBMultiplex::Begin() {
   for (uint8_t i = 0; i < num_leds_; ++i) {
-    pinMode(anode_pins_[i], OUTPUT);
+    pinMode(anode_pins_[i], OUTPUT_8MA);
     digitalWrite(anode_pins_[i], LOW);
   }
   pinMode(r_pin_, OUTPUT);
@@ -100,6 +100,9 @@ void RGBMultiplex::Update() {
     critical_section_enter_blocking(&rgbmux_critsec);
   #endif
   
+  digitalWrite(r_pin_, HIGH);
+  digitalWrite(g_pin_, HIGH);
+  digitalWrite(b_pin_, HIGH);
   for (uint8_t i = 0; i < num_leds_; ++i) {
     digitalWrite(anode_pins_[i], LOW);
   }
@@ -120,7 +123,9 @@ void RGBMultiplex::Update() {
     digitalWrite(anode_pins_[current_led_], LOW);
   }
   current_led_ = (current_led_ + 1) % num_leds_;
-  pwm_cycle_ = (pwm_cycle_ + 1) % 8;
+  if (current_led_ == num_leds_ - 1) {
+    pwm_cycle_ = (pwm_cycle_ + 1) % 8;
+  }
 
   #if defined(ARDUINO_ARCH_RP2040)
     critical_section_exit(&rgbmux_critsec);
